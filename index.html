@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>E-labs Cleaner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>E-labs Cleaner</h1>
+
+    <section class="panel topbar" aria-label="Основные действия">
+      <div class="file-wrap" title="Выбрать файл">
+        <label for="fileInput" class="btn btn-secondary">Выбрать файл</label>
+        <input id="fileInput" type="file" accept="audio/*" class="file-input" aria-label="Выбрать аудиофайл">
+      </div>
+      <button id="processBtn" type="button" class="btn btn-accent">Обработать</button>
+      <a id="downloadLink" href="#" download="processed.wav" class="btn btn-download disabled" aria-disabled="true">Скачать обработанный файл</a>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden>
+      Готово! Файл обработан.
+    </div>
+
+
+    <section class="panel" aria-label="Плееры">
+      <div class="players">
+        <div class="player">
+          <h3>Исходное аудио</h3>
+          <audio id="originalAudio" controls></audio>
+        </div>
+
+        <div class="player">
+          <h3>Обработанное аудио</h3>
+          <audio id="processedAudio" controls></audio>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Настройки пауз">
+      <div class="panel-header">
+        <h2>Настройки пауз</h2>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="silenceThreshold" class="label-row">
+            <span>Порог тишины</span>
+            <span class="info" tabindex="0" aria-label="Порог тишины — подсказка">i</span>
+            <span class="tooltip">Чем выше значение, тем агрессивнее вырезаются тихие участки.</span>
+          </label>
+          <div class="control">
+            <input id="silenceThreshold" type="range" min="0.001" max="0.08" step="0.001" value="0.015">
+            <output id="silenceThresholdValue" for="silenceThreshold" class="mono">0.015</output>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="minSilenceMs" class="label-row">
+            <span>Минимальная длина тишины (мс)</span>
+            <span class="info" tabindex="0" aria-label="Минимальная длина тишины — подсказка">i</span>
+            <span class="tooltip">Только паузы длиннее этого значения будут сокращаться.</span>
+          </label>
+          <div class="control">
+            <input id="minSilenceMs" type="range" min="50" max="1200" step="10" value="250">
+            <output id="minSilenceMsValue" for="minSilenceMs" class="mono">250</output>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="overlapMs" class="label-row">
+            <span>Перекрытие / кроссфейд (мс)</span>
+            <span class="info" tabindex="0" aria-label="Перекрытие — подсказка">i</span>
+            <span class="tooltip">Помогает сделать переходы между кусками плавными.</span>
+          </label>
+          <div class="control">
+            <input id="overlapMs" type="range" min="0" max="200" step="5" value="70">
+            <output id="overlapMsValue" for="overlapMs" class="mono">70</output>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <details class="panel" aria-label="Эквалайзер" open>
+      <summary class="label-row">
+        <span>Эквалайзер</span>
+        <span class="info" tabindex="0" aria-label="Эквалайзер — подсказка">i</span>
+        <span class="tooltip">Эквалайзер меняет окраску голоса.<br>
+<b>Тёплый и натуральный</b> — для рассказов и озвучки.<br>
+<b>Чистый голос</b> — для максимальной разборчивости.<br>
+<b>Кинематографичный</b> — для выразительной подачи.</span>
+      </summary>
+      <div class="field">
+        <label for="enableEq">
+          <input id="enableEq" type="checkbox"> Включить эквалайзер (необязательно)
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="eqPreset">Пресет</label>
+        <div class="control control-block">
+          <select id="eqPreset" class="select-full">
+            <option value="clear">Чистый голос</option>
+            <option value="warm" selected>Тёплый и натуральный</option>
+            <option value="cinematic">Кинематографичный / Глубокий</option>
+            <option value="custom">Пользовательский</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="eqCustomGroup" class="eq-custom" hidden>
+        <div class="field">
+          <label for="eqLow">Низкие</label>
+          <div class="control">
+            <input id="eqLow" type="range" min="-12" max="12" step="1" value="0">
+            <output id="eqLowValue" for="eqLow" class="mono">0 dB</output>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="eqMid">Средние</label>
+          <div class="control">
+            <input id="eqMid" type="range" min="-12" max="12" step="1" value="0">
+            <output id="eqMidValue" for="eqMid" class="mono">0 dB</output>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="eqHigh">Высокие</label>
+          <div class="control">
+            <input id="eqHigh" type="range" min="-12" max="12" step="1" value="0">
+            <output id="eqHighValue" for="eqHigh" class="mono">0 dB</output>
+          </div>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <footer class="footer">made by t.me/wsrok</footer>
+
+  <script src="audioProcessor.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.min.js"></script>
+  <script src="app.js"></script>
+</body>
+<style>
+  /* Small helper for screen readers */
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+</style>
+</html>
+
